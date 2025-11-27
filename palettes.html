@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Choose a Palette</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #1e1e1e, #3a3a3a);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        h1 {
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        .palette-list {
+            width: 100%;
+            max-width: 400px;
+            margin-top: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .palette {
+            background: rgba(255,255,255,0.08);
+            padding: 15px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: 0.2s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .palette:hover {
+            background: rgba(255,255,255,0.18);
+        }
+
+        .colors {
+            display: flex;
+            gap: 5px;
+        }
+
+        .color {
+            width: 22px;
+            height: 22px;
+            border-radius: 6px;
+        }
+
+        .back-button {
+            margin-top: 20px;
+            background: #4CAF50;
+            padding: 10px 20px;
+            border-radius: 10px;
+            color: black;
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        .back-button:hover {
+            background: #45a049;
+        }
+    </style>
+
+    <script>
+        function choosePalette(name) {
+            // Go to canvas.html with palette name as parameter
+            window.location.href = "canvas.html?palette=" + encodeURIComponent(name);
+        }
+    </script>
+</head>
+
+<body>
+
+    <h1>Select a Color Palette</h1>
+
+    <div class="palette-list">
+
+        <div class="palette" onclick="choosePalette('Warm Sunset')">
+            <span>Warm Sunset</span>
+            <div class="colors">
+                <div class="color" style="background:#FF4500"></div>
+                <div class="color" style="background:#FF8C00"></div>
+                <div class="color" style="background:#FFD700"></div>
+            </div>
+        </div>
+
+        <div class="palette" onclick="choosePalette('Ocean Breeze')">
+            <span>Ocean Breeze</span>
+            <div class="colors">
+                <div class="color" style="background:#1E90FF"></div>
+                <div class="color" style="background:#00BFFF"></div>
+                <div class="color" style="background:#87CEFA"></div>
+            </div>
+        </div>
+
+        <div class="palette" onclick="choosePalette('Forest Spirit')">
+            <span>Forest Spirit</span>
+            <div class="colors">
+                <div class="color" style="background:#228B22"></div>
+                <div class="color" style="background:#32CD32"></div>
+                <div class="color" style="background:#98FB98"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <a class="back-button" href="index.html">Back</a>
+
+</body>
+</html>
