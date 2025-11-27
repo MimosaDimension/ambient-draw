@@ -53,7 +53,7 @@
 
     .palettes{
       display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+      grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
       gap:20px;
       margin-top:20px;
     }
@@ -74,16 +74,19 @@
     }
 
     .colors{
-      display:flex;
-      gap:6px;
+      display:grid;
+      grid-template-columns:repeat(7, 20px);
+      grid-auto-rows:20px;
+      gap:4px;
       margin-top:10px;
+      justify-content:center;
     }
 
     .color{
-      width:22px;
-      height:22px;
+      width:20px;
+      height:20px;
       border-radius:4px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.4) inset;
+      box-shadow:0 1px 4px rgba(0,0,0,0.4) inset;
     }
 
     .btn{
@@ -146,27 +149,28 @@
       <div class="palette-box" id="p1" onclick="selectPalette('p1')">
         Ambient Set 01
         <div class="colors">
-          <div class="color" style="background:#a6d8ff"></div>
-          <div class="color" style="background:#8bb3ff"></div>
-          <div class="color" style="background:#6a8bff"></div>
+          <!-- 21 цвета, 3 ряда по 7 -->
+          #a6d8ff, #8bb3ff, #6a8bff, #5a92ff, #4a7eff, #3f6aff, #3460ff,
+          #8fffe2, #6cffc8, #4fe0aa, #36c98f, #22b377, #0e9f60, #007c4a,
+          #ffeaa6, #ffd88b, #ffc470, #ffb55a, #ffa440, #ff9330, #ff8220
         </div>
       </div>
 
       <div class="palette-box" id="p2" onclick="selectPalette('p2')">
         Ambient Set 02
         <div class="colors">
-          <div class="color" style="background:#ffd4a6"></div>
-          <div class="color" style="background:#ffb88b"></div>
-          <div class="color" style="background:#ff9870"></div>
+          #ffb3b3, #ff9999, #ff8080, #ff6666, #ff4d4d, #ff3333, #ff1a1a,
+          #ffd4a6, #ffbb88, #ffa270, #ff894d, #ff7033, #ff5720, #ff3d0d,
+          #fff1a6, #ffe788, #ffdd70, #ffd44d, #ffca33, #ffc220, #ffb700
         </div>
       </div>
 
       <div class="palette-box" id="p3" onclick="selectPalette('p3')">
         Ambient Set 03
         <div class="colors">
-          <div class="color" style="background:#bfffc8"></div>
-          <div class="color" style="background:#90f0a4"></div>
-          <div class="color" style="background:#69d382"></div>
+          #bfffc8, #90f0a4, #69d382, #42b460, #22a544, #009923, #007b19,
+          #c8eaff, #99dfff, #66d2ff, #33c6ff, #00b9ff, #0099cc, #007799,
+          #f0d4ff, #e6a6ff, #d97fff, #cc59ff, #bf33ff, #a800e6, #8f00bf
         </div>
       </div>
 
@@ -179,5 +183,6 @@
 
 </body>
 </html>
+
 
 
