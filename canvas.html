@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Ambient Draw — Canvas</title>
+
+  <!-- PixiJS (CDN) -->
+  <script src="https://pixijs.download/release/pixi.min.js"></script>
+
+  <style>
+    :root{
+      --bg:#0f1724; --bg2:#051025; --accent:#7dd3fc; --text:#e6eef8; --subtext:#9fb1c9;
+    }
+    html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;background:linear-gradient(180deg,var(--bg),var(--bg2));color:var(--text)}
+    .app{max-width:1200px;margin:20px auto;padding:16px;display:flex;gap:16px;align-items:flex-start}
+    /* left panel */
+    .panel{width:180px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:12px;padding:12px;box-shadow:0 8px 20px rgba(2,6,23,0.5);box-sizing:border-box}
+    .panel h3{margin:6px 0 8px;font-size:15px}
+    .palette-title{font-size:13px;color:var(--subtext);text-align:center;margin-bottom:8px}
+    .palette-grid{display:grid;grid-template-columns:repeat(7,16px);grid-auto-rows:16px;gap:6px;justify-content:center;margin-bottom:12px}
+    .sw{width:16px;height:16px;border-radius:3px;cursor:pointer;box-shadow:inset 0 1px 2px rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.03)}
+    .controls{display:flex;flex-direction:column;gap:8px}
+    .btn{display:inline-block;padding:8px 10px;border-radius:8px;background:var(--accent);color:#012;font-weight:700;text-align:center;cursor:pointer;text-decoration:none;font-size:13px}
+    .btn.ghost{background:transparent;color:var(--subtext);border:1px solid rgba(255,255,255,0.04)}
+    .small{font-size:12px;padding:6px 8px;border-radius:8px;background:rgba(255,255,255,0.02);text-align:center;cursor:pointer}
+    .label{font-size:12px;color:var(--subtext);margin-bottom:6px}
+    /* canvas area */
+    .canvas-wrap{flex:1;display:flex;flex-direction:column;gap:10px}
+    .canvas-card{background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.015));border-radius:12px;padding:10px;box-shadow:0 8px 24px rgba(2,6,23,0.5)}
+    #pixi-view{width:100%;height:640px;border-radius:8px;overflow:hidden;background:linear-gradient(180deg, rgba(10,18,30,0.4), rgba(0,8,20,0.2));touch-action:none}
+    .topbar{display:flex;justify-content:space-between;align-items:center}
+    .info{color:var(--subtext);font-size:13px}
+    .status{font-size:13px;color:var(--subtext)}
+    @media (max-width:900px){
+      .app{flex-direction:column;padding:10px}
+      .panel{width:100%;display:flex;flex-wrap:wrap;gap:8px}
+      .palette-grid{transform:scale(0.98)}
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app">
+    <!-- Left panel -->
+    <div class="panel" id="leftPanel">
+      <h3>Palette</h3>
+      <div class="palette-title" id="paletteName">Ambient Set</div>
+      <div class="palette-grid" id="paletteGrid" aria-hidden="false"></div>
+
+      <div style="height:8px"></div>
+
+      <div class="label">Tool</div>
+      <div style="display:flex;gap:8px;margin-bottom:6px">
+        <div class="small" id="brushBtn">Brush</div>
+        <div class="small" id="eraserBtn">Eraser</div>
+      </div>
+
+      <div>
+        <div class="label">Brush size</div>
+        <input id="sizeRange" type="range" min="2" max="120" value="18" style="width:100%"/>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <div class="btn" id="clearBtn">Clear</div>
+        <div class="btn ghost" id="saveBtn">Save</div>
+      </div>
+
+      <a class="btn ghost" id="backBtn" href="palettes.html" style="display:block;margin-top:10px;text-align:center">← Back</a>
+    </div>
+
+    <!-- Canvas area -->
+    <div class="canvas-wrap">
+      <div class="canvas-card">
+        <div class="topbar">
+          <div class="info">Draw with colors — audio will be added later</div>
+          <div class="status" id="status">Brush • Size 18</div>
+        </div>
+        <!-- Pixi view -->
+        <div id="pixi-view"></div>
+        <div style="display:flex;justify-content:space-between;color:var(--subtext);font-size:13px">
+          <div>Tip: use mouse, touch or pen (as mouse).</div>
+          <div>Ambient Draw — prototype</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* ============================
+   Pixi drawing surface (RenderTexture stamps)
+   - draws colored stamps to a RenderTexture
+   - eraser uses BLEND_MODES.DST_OUT to remove
+   - supports pointer events (mouse/touch/pen)
+   - responsive with DPR handling
+   ============================ */
+
+/* --- Palettes (same as palettes.html) --- */
+const PALETTES = {
+  p1: {
+    name: "Ambient Set 01",
+    colors: [
+      "#a6d8ff","#8bb3ff","#6a8bff","#5a92ff","#4a7eff","#3f6aff","#3460ff",
+      "#8fffe2","#6cffc8","#4fe0aa","#36c98f","#22b377","#0e9f60","#007c4a",
+      "#ffeaa6","#ffd88b","#ffc470","#ffb55a","#ffa440","#ff9330","#ff8220"
+    ]
+  },
+  p2: {
+    name: "Ambient Set 02",
+    colors: [
+      "#ffb3b3","#ff9999","#ff8080","#ff6666","#ff4d4d","#ff3333","#ff1a1a",
+      "#ffd4a6","#ffbb88","#ffa270","#ff894d","#ff7033","#ff5720","#ff3d0d",
+      "#fff1a6","#ffe788","#ffdd70","#ffd44d","#ffca33","#ffc220","#ffb700"
+    ]
+  },
+  p3: {
+    name: "Ambient Set 03",
+    colors: [
+      "#bfffc8","#90f0a4","#69d382","#42b460","#22a544","#009923","#007b19",
+      "#c8eaff","#99dfff","#66d2ff","#33c6ff","#00b9ff","#0099cc","#007799",
+      "#f0d4ff","#e6a6ff","#d97fff","#cc59ff","#bf33ff","#a800e6","#8f00bf"
+    ]
+  }
+};
+
+/* --- Utils: read palette param --- */
+function getParam(name){
+  try {
+    const u = new URL(location.href);
+    return u.searchParams.get(name);
+  } catch(e){ return null; }
+}
+let paletteId = getParam('palette') || 'p1';
+if(!PALETTES[paletteId]) paletteId = 'p1';
+
+/* --- DOM refs --- */
+const paletteGrid = document.getElementById('paletteGrid');
+const paletteName = document.getElementById('paletteName');
+const statusEl = document.getElementById('status');
+const brushBtn = document.getElementById('brushBtn');
+const eraserBtn = document.getElementById('eraserBtn');
+const sizeRange = document.getElementById('sizeRange');
+const clearBtn = document.getElementById('clearBtn');
+const saveBtn = document.getElementById('saveBtn');
+const pixiView = document.getElementById('pixi-view');
+
+/* --- Populate palette grid (3x7) --- */
+function buildPaletteGrid(id){
+  paletteGrid.innerHTML = '';
+  const palette = PALETTES[id];
+  paletteName.textContent = palette.name;
+  palette.colors.forEach((c,i)=>{
+    const el = document.createElement('div');
+    el.className = 'sw';
+    el.style.background = c;
+    el.dataset.color = c;
+    el.title = c;
+    el.addEventListener('click', ()=> {
+      currentColor = c;
+      currentTool = 'brush';
+      updateUI();
+      highlightSelectedSwatch(el);
+    });
+    paletteGrid.appendChild(el);
+  });
+}
+function highlightSelectedSwatch(el){
+  // clear
+  paletteGrid.querySelectorAll('.sw').forEach(s=>s.style.outline = '0');
+  if(el) el.style.outline = '2px solid rgba(125,211,252,0.14)';
+}
+buildPaletteGrid(paletteId);
+
+/* --- Pixi app and render texture setup --- */
+const app = new PIXI.Application({
+  width: 1000, height: 600,
+  backgroundAlpha: 0,
+  antialias: true,
+  resolution: Math.max(1, window.devicePixelRatio || 1),
+  autoDensity: true
+});
+pixiView.appendChild(app.view);
+
+/* We'll create a RenderTexture that we can stamp onto */
+let rt = PIXI.RenderTexture.create({
+  width: Math.max(800, Math.floor(app.renderer.width)), // initial, will resize
+  height: Math.max(400, Math.floor(app.renderer.height)),
+  scaleMode: PIXI.SCALE_MODES.LINEAR
+});
+const rtSprite = new PIXI.Sprite(rt);
+rtSprite.x = 0; rtSprite.y = 0;
+rtSprite.width = app.view.clientWidth;
+rtSprite.height = app.view.clientHeight;
+app.stage.addChild(rtSprite);
+
+/* A container for UI overlays (optional) */
+const uiLayer = new PIXI.Container();
+app.stage.addChild(uiLayer);
+
+/* Create a reusable circular brush texture (white), we will tint it */
+function makeBrushTexture(diameter){
+  const g = new PIXI.Graphics();
+  g.beginFill(0xffffff);
+  g.drawCircle(diameter/2, diameter/2, diameter/2);
+  g.endFill();
+  const texture = app.renderer.generateTexture(g, PIXI.SCALE_MODES.LINEAR, 1);
+  g.destroy({children:true});
+  return texture;
+}
+
+/* current drawing state */
+let currentTool = 'brush';
+let currentColor = PALETTES[paletteId].colors[0];
+let currentSize = parseInt(sizeRange.value,10) || 18;
+
+/* create base brush texture at max size to sample from (we'll scale sprite) */
+const baseBrushTexture = makeBrushTexture(256); // high-res brush to scale down
+
+/* function to stamp to render texture at pixel coords (px,py) in renderer coordinates */
+function stampToRT(px, py, size, color, erase=false){
+  // Create a sprite from base texture, set tint and scale
+  const spr = new PIXI.Sprite(baseBrushTexture);
+  const scale = (size / 256);
+  spr.anchor.set(0.5);
+  spr.x = px;
+  spr.y = py;
+  spr.scale.set(scale, scale);
+  spr.tint = color ? PIXI.utils.string2hex(color) : 0xffffff;
+  spr.alpha = 1.0;
+  spr.blendMode = erase ? PIXI.BLEND_MODES.DST_OUT : PIXI.BLEND_MODES.NORMAL;
+  // render the sprite into the render texture
+  app.renderer.render(spr, { renderTexture: rt, clear: false, transform: undefined });
+  spr.destroy();
+}
+
+/* coordinate helpers: convert clientX/Y to renderer pixel coords */
+function clientToRenderer(ev){
+  const rect = app.view.getBoundingClientRect();
+  const clientX = ev.clientX !== undefined ? ev.clientX : (ev.touches && ev.touches[0] && ev.touches[0].clientX);
+  const clientY = ev.clientY !== undefined ? ev.clientY : (ev.touches && ev.touches[0] && ev.touches[0].clientY);
+  const cssX = clientX - rect.left;
+  const cssY = clientY - rect.top;
+  // ratio between renderer pixels and css px
+  const ratioX = app.renderer.width / rect.width;
+  const ratioY = app.renderer.height / rect.height;
+  return { x: cssX * ratioX, y: cssY * ratioY };
+}
+
+/* Drawing stroke interpolation: stamp along the line every step pixels */
+function stampLine(from, to, size, color, erase=false){
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const dist = Math.hypot(dx, dy);
+  if(dist < 1){
+    stampToRT(to.x, to.y, size, color, erase);
+    return;
+  }
+  // step determined by size to keep continuous
+  const step = Math.max(2, Math.floor(size / 2));
+  const steps = Math.ceil(dist / step);
+  for(let i=0;i<=steps;i++){
+    const t = i / steps;
+    const x = from.x + dx * t;
+    const y = from.y + dy * t;
+    stampToRT(x, y, size, color, erase);
+  }
+}
+
+/* Pointer handling */
+let drawing = false;
+let lastPoint = null;
+
+function onPointerDown(ev){
+  ev.preventDefault();
+  const p = clientToRenderer(ev);
+  drawing = true;
+  lastPoint = p;
+  if(currentTool === 'eraser'){
+    stampToRT(p.x, p.y, currentSize, null, true);
+  } else {
+    stampToRT(p.x, p.y, currentSize, currentColor, false);
+  }
+}
+
+function onPointerMove(ev){
+  if(!drawing) return;
+  const p = clientToRenderer(ev);
+  if(!lastPoint) lastPoint = p;
+  // stamp interpolated line
+  stampLine(lastPoint, p, currentSize, currentColor, currentTool === 'eraser');
+  lastPoint = p;
+}
+
+function onPointerUp(ev){
+  drawing = false;
+  lastPoint = null;
+}
+
+/* attach pointer events to the view element (supports pen/touch) */
+app.view.style.touchAction = 'none';
+app.view.addEventListener('pointerdown', onPointerDown);
+window.addEventListener('pointermove', onPointerMove);
+window.addEventListener('pointerup', onPointerUp);
+window.addEventListener('pointercancel', onPointerUp);
+
+/* resizing: keep rt in sync with view size */
+function resizeRT(){
+  const rect = app.view.getBoundingClientRect();
+  const dpr = Math.max(1, window.devicePixelRatio || 1);
+  const newW = Math.max(256, Math.floor(rect.width * dpr));
+  const newH = Math.max(256, Math.floor(rect.height * dpr));
+  if(rt.width === newW && rt.height === newH) {
+    // still adjust sprite display size
+    rtSprite.width = rect.width;
+    rtSprite.height = rect.height;
+    return;
+  }
+  // create new RT and copy existing content
+  const newRT = PIXI.RenderTexture.create({width:newW, height:newH, scaleMode:PIXI.SCALE_MODES.LINEAR});
+  // draw old RT into new RT (scaled)
+  const tmpSprite = new PIXI.Sprite(rt);
+  tmpSprite.width = rect.width;
+  tmpSprite.height = rect.height;
+  tmpSprite.x = 0; tmpSprite.y = 0;
+  app.renderer.render(tmpSprite, { renderTexture: newRT, clear: true });
+  // replace
+  rt.destroy(true);
+  rt = newRT;
+  rtSprite.texture = rt;
+  rtSprite.width = rect.width;
+  rtSprite.height = rect.height;
+}
+window.addEventListener('resize', ()=>{
+  // debounce
+  clearTimeout(window._resizeTimer);
+  window._resizeTimer = setTimeout(resizeRT, 120);
+});
+// initial size adjust
+setTimeout(resizeRT, 50);
+
+/* UI bindings */
+function updateUI(){
+  statusEl.textContent = `${currentTool === 'eraser' ? 'Eraser' : 'Brush'} • Size ${currentSize}`;
+  // simple visual feedback on buttons
+  brushBtn.style.background = currentTool === 'brush' ? 'rgba(255,255,255,0.04)' : 'transparent';
+  eraserBtn.style.background = currentTool === 'eraser' ? 'rgba(255,255,255,0.04)' : 'transparent';
+}
+brushBtn.addEventListener('click', ()=>{
+  currentTool = 'brush'; updateUI();
+});
+eraserBtn.addEventListener('click', ()=>{
+  currentTool = 'eraser'; updateUI();
+});
+sizeRange.addEventListener('input', (e)=>{
+  currentSize = parseInt(e.target.value,10) || 18;
+  updateUI();
+});
+clearBtn.addEventListener('click', ()=>{
+  // clear RT by rendering a cleared quad
+  const clearGfx = new PIXI.Graphics();
+  clearGfx.beginFill(0x000000,0);
+  clearGfx.drawRect(0,0,app.view.clientWidth, app.view.clientHeight);
+  clearGfx.endFill();
+  // clear by rendering a transparent background and then clearing the RT
+  app.renderer.render(clearGfx, { renderTexture: rt, clear: true });
+  clearGfx.destroy();
+});
+saveBtn.addEventListener('click', ()=>{
+  // extract RT to canvas and download PNG
+  const canvas = app.renderer.extract.canvas(rt);
+  canvas.toBlob((blob)=>{
+    const a = document.createElement('a');
+    a.download = 'ambient-draw.png';
+    a.href = URL.createObjectURL(blob);
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }, 'image/png');
+});
+
+/* initial UI state, highlight first swatch */
+updateUI();
+const firstSw = paletteGrid.querySelector('.sw');
+if(firstSw){
+  highlightSelectedSwatch(firstSw);
+  currentColor = firstSw.dataset.color;
+}
+
+/* helper: clicking anywhere outside should not cause default navigation etc. */
+
+/* End of script */
+</script>
+
+</body>
+</html>
