@@ -16,31 +16,11 @@
       --text:#e6eef8;
       --subtext:#9fb1c9;
     }
-    html,body{
-      height:100%;
-      margin:0;
-      font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
-      background:linear-gradient(180deg,var(--bg),var(--bg2));
-      color:var(--text);
-    }
-    .container{
-      max-width:1200px;
-      margin:20px auto;
-      padding:16px;
-      display:flex;
-      gap:16px;
-      align-items:flex-start;
-    }
+    html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;background:linear-gradient(180deg,var(--bg),var(--bg2));color:var(--text)}
+    .container{max-width:1200px;margin:20px auto;padding:16px;display:flex;gap:16px;align-items:flex-start}
 
     /* left panel */
-    .panel{
-      width:180px;
-      background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-      border-radius:12px;
-      padding:12px;
-      box-shadow:0 8px 20px rgba(2,6,23,0.5);
-      box-sizing:border-box;
-    }
+    .panel{width:180px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:12px;padding:12px;box-shadow:0 8px 20px rgba(2,6,23,0.5);box-sizing:border-box;position:relative; z-index:10;}
     .panel h3{margin:6px 0 8px;font-size:15px}
     .palette-title{font-size:13px;color:var(--subtext);text-align:center;margin-bottom:8px}
     .palette-grid{display:grid;grid-template-columns:repeat(7,18px);grid-auto-rows:18px;gap:6px;justify-content:center;margin-bottom:12px}
@@ -52,9 +32,9 @@
     .label{font-size:12px;color:var(--subtext);margin-bottom:6px}
 
     /* canvas area */
-    .canvas-wrap{flex:1;display:flex;flex-direction:column;gap:10px}
+    .canvas-wrap{flex:1;display:flex;flex-direction:column;gap:10px;position:relative; z-index:1}
     .canvas-card{background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.015));border-radius:12px;padding:10px;box-shadow:0 8px 24px rgba(2,6,23,0.5)}
-    #pixi-view{width:100%;height:640px;border-radius:8px;overflow:hidden;background:#0f1724;touch-action:none;position:relative}
+    #pixi-view{width:100%;height:640px;border-radius:8px;overflow:hidden;background:linear-gradient(180deg, rgba(10,18,30,0.4), rgba(0,8,20,0.2));touch-action:none;position:relative; z-index:1}
     .topbar{display:flex;justify-content:space-between;align-items:center}
     .info{color:var(--subtext);font-size:13px}
     .status{font-size:13px;color:var(--subtext)}
@@ -91,7 +71,7 @@
         <div class="btn ghost" id="saveBtn">Save</div>
       </div>
 
-      <div class="btn ghost" id="backBtn" style="display:block;margin-top:10px;text-align:center">← Back</div>
+      <a class="btn ghost" id="backBtn" style="display:block;margin-top:10px;text-align:center">← Back</a>
     </div>
 
     <!-- Canvas area -->
@@ -115,26 +95,12 @@
 <script>
 document.addEventListener('DOMContentLoaded', ()=>{
 
-/* Palettes */
 const PALETTES = {
-  p1:{name:"Ambient Set 01", colors:[
-      "#a6d8ff","#8bb3ff","#6a8bff","#5a92ff","#4a7eff","#3f6aff","#3460ff",
-      "#8fffe2","#6cffc8","#4fe0aa","#36c98f","#22b377","#0e9f60","#007c4a",
-      "#ffeaa6","#ffd88b","#ffc470","#ffb55a","#ffa440","#ff9330","#ff8220"
-  ]},
-  p2:{name:"Ambient Set 02", colors:[
-      "#ffb3b3","#ff9999","#ff8080","#ff6666","#ff4d4d","#ff3333","#ff1a1a",
-      "#ffd4a6","#ffbb88","#ffa270","#ff894d","#ff7033","#ff5720","#ff3d0d",
-      "#fff1a6","#ffe788","#ffdd70","#ffd44d","#ffca33","#ffc220","#ffb700"
-  ]},
-  p3:{name:"Ambient Set 03", colors:[
-      "#bfffc8","#90f0a4","#69d382","#42b460","#22a544","#009923","#007b19",
-      "#c8eaff","#99dfff","#66d2ff","#33c6ff","#00b9ff","#0099cc","#007799",
-      "#f0d4ff","#e6a6ff","#d97fff","#cc59ff","#bf33ff","#a800e6","#8f00bf"
-  ]}
+  p1:{name:"Ambient Set 01", colors:["#a6d8ff","#8bb3ff","#6a8bff","#5a92ff","#4a7eff","#3f6aff","#3460ff","#8fffe2","#6cffc8","#4fe0aa","#36c98f","#22b377","#0e9f60","#007c4a","#ffeaa6","#ffd88b","#ffc470","#ffb55a","#ffa440","#ff9330","#ff8220"]},
+  p2:{name:"Ambient Set 02", colors:["#ffb3b3","#ff9999","#ff8080","#ff6666","#ff4d4d","#ff3333","#ff1a1a","#ffd4a6","#ffbb88","#ffa270","#ff894d","#ff7033","#ff5720","#ff3d0d","#fff1a6","#ffe788","#ffdd70","#ffd44d","#ffca33","#ffc220","#ffb700"]},
+  p3:{name:"Ambient Set 03", colors:["#bfffc8","#90f0a4","#69d382","#42b460","#22a544","#009923","#007b19","#c8eaff","#99dfff","#66d2ff","#33c6ff","#00b9ff","#0099cc","#007799","#f0d4ff","#e6a6ff","#d97fff","#cc59ff","#bf33ff","#a800e6","#8f00bf"]}
 };
 
-/* Read palette from URL */
 function getParam(name){
   try{ return new URL(location.href).searchParams.get(name);}
   catch(e){return null;}
@@ -142,7 +108,6 @@ function getParam(name){
 let paletteId = getParam('palette') || 'p1';
 if(!PALETTES[paletteId]) paletteId='p1';
 
-/* DOM references */
 const paletteGrid = document.getElementById('paletteGrid');
 const paletteName = document.getElementById('paletteName');
 const statusEl = document.getElementById('status');
@@ -151,10 +116,9 @@ const eraserBtn = document.getElementById('eraserBtn');
 const sizeRange = document.getElementById('sizeRange');
 const clearBtn = document.getElementById('clearBtn');
 const saveBtn = document.getElementById('saveBtn');
-const pixiView = document.getElementById('pixi-view');
 const backBtn = document.getElementById('backBtn');
+const pixiView = document.getElementById('pixi-view');
 
-/* build palette UI */
 function buildPalette(id){
   const pal = PALETTES[id];
   paletteName.textContent = pal.name;
@@ -178,7 +142,6 @@ function buildPalette(id){
 }
 buildPalette(paletteId);
 
-/* PIXIJS application */
 const app = new PIXI.Application({
   backgroundAlpha: 0,
   antialias: true,
@@ -188,11 +151,9 @@ const app = new PIXI.Application({
 });
 pixiView.appendChild(app.view);
 
-/* drawing layer */
 const g = new PIXI.Graphics();
 app.stage.addChild(g);
 
-/* state */
 let drawing=false,last=null,currentColor=PALETTES[paletteId].colors[0];
 let currentSize=parseInt(sizeRange.value,10)||18;
 let currentTool='brush';
@@ -204,7 +165,6 @@ function updateUI(){
 }
 updateUI();
 
-/* pointer helper */
 function getPosFromEvent(e){
   const rect=app.view.getBoundingClientRect();
   const x=(e.clientX-rect.left)*(app.renderer.width/rect.width)/app.renderer.resolution;
@@ -212,7 +172,6 @@ function getPosFromEvent(e){
   return {x,y};
 }
 
-/* draw line */
 function drawLine(from,to,color,size,erase=false){
   if(erase){
     g.beginFill(0x0f1724);
@@ -226,7 +185,6 @@ function drawLine(from,to,color,size,erase=false){
   g.endFill();
 }
 
-/* pointer events */
 app.view.addEventListener('pointerdown',e=>{
   drawing=true;
   last=getPosFromEvent(e);
@@ -241,11 +199,11 @@ window.addEventListener('pointermove',e=>{
 window.addEventListener('pointerup',()=>{drawing=false; last=null;});
 window.addEventListener('pointercancel',()=>{drawing=false; last=null;});
 
-/* UI events */
 brushBtn.addEventListener('click',()=>{currentTool='brush';updateUI();});
 eraserBtn.addEventListener('click',()=>{currentTool='eraser';updateUI();});
 sizeRange.addEventListener('input',()=>{currentSize=parseInt(sizeRange.value,10);updateUI();});
 clearBtn.addEventListener('click',()=>{g.clear();});
+
 saveBtn.addEventListener('click',()=>{
   const canvas=app.renderer.extract.canvas(app.stage);
   canvas.toBlob(blob=>{
@@ -257,14 +215,14 @@ saveBtn.addEventListener('click',()=>{
   },'image/png');
 });
 
-/* Back button */
+// Back button
 backBtn.addEventListener('click',()=>{
   window.location.href='palettes.html';
 });
 
 updateUI();
 
-}); // DOMContentLoaded end
+});
 </script>
 
 </body>
