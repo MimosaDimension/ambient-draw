@@ -10,8 +10,8 @@
 
   <style>
     :root{
-      --bg:#0A2342;
-      --bg2:#1C3A6B;
+      --bg:#0f1724;
+      --bg2:#051025;
       --accent:#7dd3fc;
       --text:#e6eef8;
       --subtext:#9fb1c9;
@@ -93,6 +93,8 @@
   </div>
 
 <script>
+document.addEventListener('DOMContentLoaded', ()=>{
+
 /* Palettes */
 const PALETTES = {
   p1:{name:"Ambient Set 01", colors:[
@@ -192,7 +194,7 @@ function getPosFromEvent(e){
 /* draw line */
 function drawLine(from,to,color,size,erase=false){
   if(erase){
-    g.beginFill(0x0A2342);
+    g.beginFill(0x0f1724);
     g.drawCircle(to.x,to.y,size);
     g.endFill();
     return;
@@ -234,6 +236,8 @@ saveBtn.addEventListener('click',()=>{
   },'image/png');
 });
 updateUI();
+
+}); // DOMContentLoaded end
 </script>
 
 </body>
