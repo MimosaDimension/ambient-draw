@@ -16,11 +16,31 @@
       --text:#e6eef8;
       --subtext:#9fb1c9;
     }
-    html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;background:linear-gradient(180deg,var(--bg),var(--bg2));color:var(--text)}
-    .container{max-width:1200px;margin:20px auto;padding:16px;display:flex;gap:16px;align-items:flex-start}
+    html,body{
+      height:100%;
+      margin:0;
+      font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+      background:linear-gradient(180deg,var(--bg),var(--bg2));
+      color:var(--text);
+    }
+    .container{
+      max-width:1200px;
+      margin:20px auto;
+      padding:16px;
+      display:flex;
+      gap:16px;
+      align-items:flex-start;
+    }
 
     /* left panel */
-    .panel{width:180px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:12px;padding:12px;box-shadow:0 8px 20px rgba(2,6,23,0.5);box-sizing:border-box}
+    .panel{
+      width:180px;
+      background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border-radius:12px;
+      padding:12px;
+      box-shadow:0 8px 20px rgba(2,6,23,0.5);
+      box-sizing:border-box;
+    }
     .panel h3{margin:6px 0 8px;font-size:15px}
     .palette-title{font-size:13px;color:var(--subtext);text-align:center;margin-bottom:8px}
     .palette-grid{display:grid;grid-template-columns:repeat(7,18px);grid-auto-rows:18px;gap:6px;justify-content:center;margin-bottom:12px}
@@ -34,7 +54,7 @@
     /* canvas area */
     .canvas-wrap{flex:1;display:flex;flex-direction:column;gap:10px}
     .canvas-card{background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.015));border-radius:12px;padding:10px;box-shadow:0 8px 24px rgba(2,6,23,0.5)}
-    #pixi-view{width:100%;height:640px;border-radius:8px;overflow:hidden;background:linear-gradient(180deg, rgba(10,18,30,0.4), rgba(0,8,20,0.2));touch-action:none;position:relative}
+    #pixi-view{width:100%;height:640px;border-radius:8px;overflow:hidden;background:#0f1724;touch-action:none;position:relative}
     .topbar{display:flex;justify-content:space-between;align-items:center}
     .info{color:var(--subtext);font-size:13px}
     .status{font-size:13px;color:var(--subtext)}
@@ -71,7 +91,7 @@
         <div class="btn ghost" id="saveBtn">Save</div>
       </div>
 
-      <a class="btn ghost" id="backBtn" href="palette.html" style="display:block;margin-top:10px;text-align:center">← Back</a>
+      <div class="btn ghost" id="backBtn" style="display:block;margin-top:10px;text-align:center">← Back</div>
     </div>
 
     <!-- Canvas area -->
@@ -132,6 +152,7 @@ const sizeRange = document.getElementById('sizeRange');
 const clearBtn = document.getElementById('clearBtn');
 const saveBtn = document.getElementById('saveBtn');
 const pixiView = document.getElementById('pixi-view');
+const backBtn = document.getElementById('backBtn');
 
 /* build palette UI */
 function buildPalette(id){
@@ -235,6 +256,12 @@ saveBtn.addEventListener('click',()=>{
     URL.revokeObjectURL(a.href);
   },'image/png');
 });
+
+/* Back button */
+backBtn.addEventListener('click',()=>{
+  window.location.href='palettes.html';
+});
+
 updateUI();
 
 }); // DOMContentLoaded end
