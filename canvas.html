@@ -10,9 +10,8 @@
 
   <style>
     :root{
-      --bg:#0f1724;
-      --bg2:#051025;
-      --card:#0b1220;
+      --bg:#0A2342;
+      --bg2:#1C3A6B;
       --accent:#7dd3fc;
       --text:#e6eef8;
       --subtext:#9fb1c9;
@@ -72,7 +71,7 @@
         <div class="btn ghost" id="saveBtn">Save</div>
       </div>
 
-      <a class="btn ghost" id="backBtn" href="palettes.html" style="display:block;margin-top:10px;text-align:center">← Back</a>
+      <a class="btn ghost" id="backBtn" href="palette.html" style="display:block;margin-top:10px;text-align:center">← Back</a>
     </div>
 
     <!-- Canvas area -->
@@ -94,50 +93,34 @@
   </div>
 
 <script>
-/* Simple, stable Pixi drawing (Graphics-line based)
-   - Works with mouse/touch/pen
-   - Brush/eraser toggles (eraser implemented as drawing background color)
-   - Clear, Save
-   - Uses palettes from earlier (21 colors)
-*/
-
-/* Palettes (same as before) */
+/* Palettes */
 const PALETTES = {
-  p1: {
-    name: "Ambient Set 01",
-    colors: [
+  p1:{name:"Ambient Set 01", colors:[
       "#a6d8ff","#8bb3ff","#6a8bff","#5a92ff","#4a7eff","#3f6aff","#3460ff",
       "#8fffe2","#6cffc8","#4fe0aa","#36c98f","#22b377","#0e9f60","#007c4a",
       "#ffeaa6","#ffd88b","#ffc470","#ffb55a","#ffa440","#ff9330","#ff8220"
-    ]
-  },
-  p2: {
-    name: "Ambient Set 02",
-    colors: [
+  ]},
+  p2:{name:"Ambient Set 02", colors:[
       "#ffb3b3","#ff9999","#ff8080","#ff6666","#ff4d4d","#ff3333","#ff1a1a",
       "#ffd4a6","#ffbb88","#ffa270","#ff894d","#ff7033","#ff5720","#ff3d0d",
       "#fff1a6","#ffe788","#ffdd70","#ffd44d","#ffca33","#ffc220","#ffb700"
-    ]
-  },
-  p3: {
-    name: "Ambient Set 03",
-    colors: [
+  ]},
+  p3:{name:"Ambient Set 03", colors:[
       "#bfffc8","#90f0a4","#69d382","#42b460","#22a544","#009923","#007b19",
       "#c8eaff","#99dfff","#66d2ff","#33c6ff","#00b9ff","#0099cc","#007799",
       "#f0d4ff","#e6a6ff","#d97fff","#cc59ff","#bf33ff","#a800e6","#8f00bf"
-    ]
-  }
+  ]}
 };
 
-/* Read palette param */
+/* Read palette from URL */
 function getParam(name){
-  try { return new URL(location.href).searchParams.get(name); }
-  catch(e){ return null; }
+  try{ return new URL(location.href).searchParams.get(name);}
+  catch(e){return null;}
 }
 let paletteId = getParam('palette') || 'p1';
-if(!PALETTES[paletteId]) paletteId = 'p1';
+if(!PALETTES[paletteId]) paletteId='p1';
 
-/* DOM refs */
+/* DOM references */
 const paletteGrid = document.getElementById('paletteGrid');
 const paletteName = document.getElementById('paletteName');
 const statusEl = document.getElementById('status');
@@ -148,132 +131,110 @@ const clearBtn = document.getElementById('clearBtn');
 const saveBtn = document.getElementById('saveBtn');
 const pixiView = document.getElementById('pixi-view');
 
-/* populate palette */
+/* build palette UI */
 function buildPalette(id){
   const pal = PALETTES[id];
   paletteName.textContent = pal.name;
-  paletteGrid.innerHTML = '';
+  paletteGrid.innerHTML='';
   pal.colors.forEach((c,i)=>{
-    const d = document.createElement('div');
-    d.className = 'sw';
-    d.style.background = c;
-    d.dataset.color = c;
-    d.title = c;
-    d.addEventListener('click', ()=> {
-      currentColor = c;
-      currentTool = 'brush';
+    const d=document.createElement('div');
+    d.className='sw';
+    d.style.background=c;
+    d.dataset.color=c;
+    d.title=c;
+    d.addEventListener('click', ()=>{
+      currentColor=c;
+      currentTool='brush';
       updateUI();
-      // highlight
-      paletteGrid.querySelectorAll('.sw').forEach(x=> x.style.outline='0');
-      d.style.outline = '2px solid rgba(125,211,252,0.12)';
+      paletteGrid.querySelectorAll('.sw').forEach(x=>x.style.outline='0');
+      d.style.outline='2px solid rgba(125,211,252,0.12)';
     });
     paletteGrid.appendChild(d);
-    if(i===0){ d.style.outline='2px solid rgba(125,211,252,0.12)'; }
+    if(i===0) d.style.outline='2px solid rgba(125,211,252,0.12)';
   });
 }
 buildPalette(paletteId);
 
-/* PIXI app */
+/* PIXIJS application */
 const app = new PIXI.Application({
   backgroundAlpha: 0,
   antialias: true,
   autoDensity: true,
-  resolution: Math.max(1, window.devicePixelRatio || 1),
+  resolution: Math.max(1,window.devicePixelRatio||1),
   resizeTo: pixiView
 });
 pixiView.appendChild(app.view);
 
-/* drawing layer using Graphics */
+/* drawing layer */
 const g = new PIXI.Graphics();
 app.stage.addChild(g);
 
 /* state */
-let drawing = false;
-let last = null;
-let currentColor = PALETTES[paletteId].colors[0];
-let currentSize = parseInt(sizeRange.value,10) || 18;
-let currentTool = 'brush'; // 'brush' or 'eraser'
+let drawing=false,last=null,currentColor=PALETTES[paletteId].colors[0];
+let currentSize=parseInt(sizeRange.value,10)||18;
+let currentTool='brush';
 
 function updateUI(){
-  statusEl.textContent = `${currentTool === 'eraser' ? 'Eraser' : 'Brush'} • Size ${currentSize}`;
-  brushBtn.style.background = currentTool === 'brush' ? 'rgba(255,255,255,0.03)' : 'transparent';
-  eraserBtn.style.background = currentTool === 'eraser' ? 'rgba(255,255,255,0.03)' : 'transparent';
+  statusEl.textContent=`${currentTool==='eraser'?'Eraser':'Brush'} • Size ${currentSize}`;
+  brushBtn.style.background=currentTool==='brush'?'rgba(255,255,255,0.03)':'transparent';
+  eraserBtn.style.background=currentTool==='eraser'?'rgba(255,255,255,0.03)':'transparent';
 }
 updateUI();
 
-/* helpers: convert pointer event global to local stage coords */
+/* pointer helper */
 function getPosFromEvent(e){
-  // e.data.global exists for PIXI InteractionEvent, but when using view pointer listeners use clientX/Y
-  const rect = app.view.getBoundingClientRect();
-  const x = (e.clientX - rect.left) * (app.renderer.width / rect.width);
-  const y = (e.clientY - rect.top) * (app.renderer.height / rect.height);
-  // convert back to CSS coords for drawing with graphics (graphics uses resolution-scaled coords)
-  const cssX = (x / app.renderer.resolution);
-  const cssY = (y / app.renderer.resolution);
-  return {x: cssX, y: cssY};
+  const rect=app.view.getBoundingClientRect();
+  const x=(e.clientX-rect.left)*(app.renderer.width/rect.width)/app.renderer.resolution;
+  const y=(e.clientY-rect.top)*(app.renderer.height/rect.height)/app.renderer.resolution;
+  return {x,y};
 }
 
-/* drawing functions (simple, reliable) */
-function drawLine(from, to, color, size, erase=false){
+/* draw line */
+function drawLine(from,to,color,size,erase=false){
   if(erase){
-    // simple eraser: draw with transparent blend by clearing a circle area from a RenderTexture would be ideal.
-    // For stability now: draw background-colored circle to mimic erasing (works because background is uniform gradient)
-    // This is a pragmatic temporary eraser (we'll upgrade later).
-    g.beginFill(0x0A2342); // approximate background color - temporary solution
-    g.drawCircle(to.x, to.y, size);
+    g.beginFill(0x0A2342);
+    g.drawCircle(to.x,to.y,size);
     g.endFill();
     return;
   }
-  g.lineStyle(size, PIXI.utils.string2hex(color), 1, 0.5, true);
-  g.moveTo(from.x, from.y);
-  g.lineTo(to.x, to.y);
+  g.lineStyle(size,PIXI.utils.string2hex(color),1,0.5,true);
+  g.moveTo(from.x,from.y);
+  g.lineTo(to.x,to.y);
   g.endFill();
 }
 
-/* pointer handling on the canvas view */
-app.view.addEventListener('pointerdown', (ev)=>{
-  drawing = true;
-  last = getPosFromEvent(ev);
-  // draw initial dot
-  if(currentTool === 'eraser'){
-    drawLine(last, last, null, currentSize, true);
-  } else {
-    drawLine(last, last, currentColor, currentSize, false);
-  }
+/* pointer events */
+app.view.addEventListener('pointerdown',e=>{
+  drawing=true;
+  last=getPosFromEvent(e);
+  drawLine(last,last,currentColor,currentSize,currentTool==='eraser');
 });
-window.addEventListener('pointermove', (ev)=>{
+window.addEventListener('pointermove',e=>{
   if(!drawing) return;
-  const pos = getPosFromEvent(ev);
-  drawLine(last, pos, currentColor, currentSize, currentTool==='eraser');
-  last = pos;
+  const pos=getPosFromEvent(e);
+  drawLine(last,pos,currentColor,currentSize,currentTool==='eraser');
+  last=pos;
 });
-window.addEventListener('pointerup', ()=>{ drawing = false; last = null; });
-window.addEventListener('pointercancel', ()=>{ drawing = false; last = null; });
+window.addEventListener('pointerup',()=>{drawing=false; last=null;});
+window.addEventListener('pointercancel',()=>{drawing=false; last=null;});
 
 /* UI events */
-brushBtn.addEventListener('click', ()=>{ currentTool='brush'; updateUI(); });
-eraserBtn.addEventListener('click', ()=>{ currentTool='eraser'; updateUI(); });
-sizeRange.addEventListener('input', ()=>{ currentSize = parseInt(sizeRange.value,10); updateUI(); });
-
-clearBtn.addEventListener('click', ()=>{
-  g.clear();
-});
-
-saveBtn.addEventListener('click', ()=>{
-  // use renderer.extract to get a canvas image
-  const canvas = app.renderer.extract.canvas(app.stage);
-  canvas.toBlob((blob)=>{
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'ambient-draw.png';
+brushBtn.addEventListener('click',()=>{currentTool='brush';updateUI();});
+eraserBtn.addEventListener('click',()=>{currentTool='eraser';updateUI();});
+sizeRange.addEventListener('input',()=>{currentSize=parseInt(sizeRange.value,10);updateUI();});
+clearBtn.addEventListener('click',()=>{g.clear();});
+saveBtn.addEventListener('click',()=>{
+  const canvas=app.renderer.extract.canvas(app.stage);
+  canvas.toBlob(blob=>{
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='ambient-draw.png';
     a.click();
     URL.revokeObjectURL(a.href);
-  }, 'image/png');
+  },'image/png');
 });
-
-/* initial UI highlight */
 updateUI();
-
 </script>
+
 </body>
 </html>
