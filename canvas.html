@@ -1,207 +1,279 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ambient Draw - Canvas</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
-    <script src="https://pixijs.download/release/pixi.min.js"></script>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Ambient Draw — Canvas</title>
 
-    <style>
-        body {
-            margin: 0;
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #0A2342, #1C3A6B);
-            color: white;
-            overflow: hidden;
-        }
-        .top-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px;
-            background: rgba(0, 0, 0, 0.3);
-            backdrop-filter: blur(6px);
-        }
-        .tool-panel {
-            width: 120px;
-            background: rgba(255, 255, 255, 0.12);
-            padding: 15px;
-            height: calc(100vh - 60px);
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            backdrop-filter: blur(6px);
-            overflow-y: auto;
-        }
-        .color-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 6px;
-        }
-        .color-tile {
-            width: 30px;
-            height: 30px;
-            border-radius: 6px;
-            cursor: pointer;
-            border: 2px solid transparent;
-            transition: transform 0.15s;
-        }
-        .color-tile:hover {
-            transform: scale(1.15);
-        }
-        .active-color {
-            border-color: white;
-        }
-        .brush-settings {
-            margin-top: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        .canvas-container {
-            position: absolute;
-            top: 60px;
-            left: 120px;
-            right: 0;
-            bottom: 0;
-            background: #0A2342;
-        }
+  <!-- PixiJS -->
+  <script src="https://pixijs.download/release/pixi.min.js"></script>
 
-        /* Ключевое добавление: теперь холст поверх синего фона */
-        #pixi-canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            z-index: 10;
-        }
-    </style>
+  <style>
+    :root{
+      --bg:#0f1724;
+      --bg2:#051025;
+      --card:#0b1220;
+      --accent:#7dd3fc;
+      --text:#e6eef8;
+      --subtext:#9fb1c9;
+    }
+    html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;background:linear-gradient(180deg,var(--bg),var(--bg2));color:var(--text)}
+    .container{max-width:1200px;margin:20px auto;padding:16px;display:flex;gap:16px;align-items:flex-start}
+
+    /* left panel */
+    .panel{width:180px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:12px;padding:12px;box-shadow:0 8px 20px rgba(2,6,23,0.5);box-sizing:border-box}
+    .panel h3{margin:6px 0 8px;font-size:15px}
+    .palette-title{font-size:13px;color:var(--subtext);text-align:center;margin-bottom:8px}
+    .palette-grid{display:grid;grid-template-columns:repeat(7,18px);grid-auto-rows:18px;gap:6px;justify-content:center;margin-bottom:12px}
+    .sw{width:18px;height:18px;border-radius:3px;cursor:pointer;box-shadow:inset 0 1px 2px rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.03)}
+    .controls{display:flex;flex-direction:column;gap:8px}
+    .btn{display:inline-block;padding:8px 10px;border-radius:8px;background:var(--accent);color:#012;font-weight:700;text-align:center;cursor:pointer;text-decoration:none;font-size:13px}
+    .btn.ghost{background:transparent;color:var(--subtext);border:1px solid rgba(255,255,255,0.04)}
+    .small{font-size:12px;padding:6px 8px;border-radius:8px;background:rgba(255,255,255,0.02);text-align:center;cursor:pointer}
+    .label{font-size:12px;color:var(--subtext);margin-bottom:6px}
+
+    /* canvas area */
+    .canvas-wrap{flex:1;display:flex;flex-direction:column;gap:10px}
+    .canvas-card{background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.015));border-radius:12px;padding:10px;box-shadow:0 8px 24px rgba(2,6,23,0.5)}
+    #pixi-view{width:100%;height:640px;border-radius:8px;overflow:hidden;background:linear-gradient(180deg, rgba(10,18,30,0.4), rgba(0,8,20,0.2));touch-action:none;position:relative}
+    .topbar{display:flex;justify-content:space-between;align-items:center}
+    .info{color:var(--subtext);font-size:13px}
+    .status{font-size:13px;color:var(--subtext)}
+    @media (max-width:900px){
+      .container{flex-direction:column;padding:10px}
+      .panel{width:100%;display:flex;flex-wrap:wrap;gap:8px}
+    }
+  </style>
 </head>
-
 <body>
 
-    <!-- Верхняя панель -->
-    <div class="top-bar">
-        <button onclick="window.location.href='palette.html'" 
-            style="padding: 8px 16px; background-color:#1C3A6B; border:none; border-radius:6px; color:white; cursor:pointer;">
-            ← Back
-        </button>
+  <div class="container">
+    <!-- Left panel -->
+    <div class="panel">
+      <h3>Palette</h3>
+      <div class="palette-title" id="paletteName">Ambient Set</div>
+      <div class="palette-grid" id="paletteGrid"></div>
 
-        <h2 style="margin:0; font-weight:300;">Ambient Draw — Canvas</h2>
+      <div style="height:8px"></div>
 
-        <div style="width:60px;"></div>
+      <div class="label">Tool</div>
+      <div style="display:flex;gap:8px;margin-bottom:6px">
+        <div class="small" id="brushBtn">Brush</div>
+        <div class="small" id="eraserBtn">Eraser</div>
+      </div>
+
+      <div>
+        <div class="label">Brush size</div>
+        <input id="sizeRange" type="range" min="2" max="80" value="18" style="width:100%"/>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <div class="btn" id="clearBtn">Clear</div>
+        <div class="btn ghost" id="saveBtn">Save</div>
+      </div>
+
+      <a class="btn ghost" id="backBtn" href="palettes.html" style="display:block;margin-top:10px;text-align:center">← Back</a>
     </div>
 
-    <!-- Левая панель с инструментами -->
-    <div class="tool-panel">
-        <h3 style="margin-top:0; font-weight:400;">Colors</h3>
-
-        <div class="color-grid" id="colorGrid"></div>
-
-        <div class="brush-settings">
-            <h3 style="margin:0; font-weight:400;">Brush Size</h3>
-            <input type="range" id="brushSize" min="2" max="80" value="20">
-
-            <button id="brushBtn" style="padding:8px; background:#1C3A6B; color:white; border:none; border-radius:6px; cursor:pointer;">
-                Brush
-            </button>
-
-            <button id="eraserBtn" style="padding:8px; background:#7A1C1C; color:white; border:none; border-radius:6px; cursor:pointer;">
-                Eraser
-            </button>
+    <!-- Canvas area -->
+    <div class="canvas-wrap">
+      <div class="canvas-card">
+        <div class="topbar">
+          <div class="info">Draw with colors — audio will be added later</div>
+          <div class="status" id="status">Brush • Size 18</div>
         </div>
+
+        <div id="pixi-view"></div>
+
+        <div style="display:flex;justify-content:space-between;color:var(--subtext);font-size:13px">
+          <div>Tip: use mouse, touch or pen (as mouse).</div>
+          <div>Ambient Draw — prototype</div>
+        </div>
+      </div>
     </div>
+  </div>
 
-    <!-- Контейнер холста -->
-    <div class="canvas-container">
-        <canvas id="pixi-canvas"></canvas>
-    </div>
+<script>
+/* Simple, stable Pixi drawing (Graphics-line based)
+   - Works with mouse/touch/pen
+   - Brush/eraser toggles (eraser implemented as drawing background color)
+   - Clear, Save
+   - Uses palettes from earlier (21 colors)
+*/
 
-    <script>
-        // Чтение палитры из URL
-        const params = new URLSearchParams(window.location.search);
-        let paletteIndex = parseInt(params.get("palette")) || 0;
+/* Palettes (same as before) */
+const PALETTES = {
+  p1: {
+    name: "Ambient Set 01",
+    colors: [
+      "#a6d8ff","#8bb3ff","#6a8bff","#5a92ff","#4a7eff","#3f6aff","#3460ff",
+      "#8fffe2","#6cffc8","#4fe0aa","#36c98f","#22b377","#0e9f60","#007c4a",
+      "#ffeaa6","#ffd88b","#ffc470","#ffb55a","#ffa440","#ff9330","#ff8220"
+    ]
+  },
+  p2: {
+    name: "Ambient Set 02",
+    colors: [
+      "#ffb3b3","#ff9999","#ff8080","#ff6666","#ff4d4d","#ff3333","#ff1a1a",
+      "#ffd4a6","#ffbb88","#ffa270","#ff894d","#ff7033","#ff5720","#ff3d0d",
+      "#fff1a6","#ffe788","#ffdd70","#ffd44d","#ffca33","#ffc220","#ffb700"
+    ]
+  },
+  p3: {
+    name: "Ambient Set 03",
+    colors: [
+      "#bfffc8","#90f0a4","#69d382","#42b460","#22a544","#009923","#007b19",
+      "#c8eaff","#99dfff","#66d2ff","#33c6ff","#00b9ff","#0099cc","#007799",
+      "#f0d4ff","#e6a6ff","#d97fff","#cc59ff","#bf33ff","#a800e6","#8f00bf"
+    ]
+  }
+};
 
-        // Наши три палитры по 21 цвету
-        const palettes = [
-            ["#1B263B","#415A77","#778DA9","#E0E1DD","#0D1B2A","#3E5C76","#748CAB","#F0F0F0","#A0A0A0","#C0C0C0","#E0E0E0","#102030","#203040","#304050","#506070","#708090","#90A0B0","#B0C0D0","#D0E0F0","#AABCCC","#8899BB"],
-            ["#2E4057","#48639C","#4C769F","#679186","#BFB48F","#E5DCC8","#C9ADA7","#9A8C98","#4A4E69","#22223B","#6D6875","#7E6A9E","#9B6A6C","#C79D7C","#E2C290","#DAD2BC","#9C6644","#7E4E60","#586F7C","#2F4858","#33658A"],
-            ["#F4D06F","#FF8811","#9DD9D2","#392F5A","#7EA8BE","#E28413","#F6AE2D","#F7D488","#A3D2CA","#5EAAA8","#056676","#A16AE8","#70D6FF","#FF70A6","#FF9770","#FFD670","#E9FF70","#C8F2E3","#90A955","#31572C","#132A13"]
-        ];
+/* Read palette param */
+function getParam(name){
+  try { return new URL(location.href).searchParams.get(name); }
+  catch(e){ return null; }
+}
+let paletteId = getParam('palette') || 'p1';
+if(!PALETTES[paletteId]) paletteId = 'p1';
 
-        const colors = palettes[paletteIndex];
+/* DOM refs */
+const paletteGrid = document.getElementById('paletteGrid');
+const paletteName = document.getElementById('paletteName');
+const statusEl = document.getElementById('status');
+const brushBtn = document.getElementById('brushBtn');
+const eraserBtn = document.getElementById('eraserBtn');
+const sizeRange = document.getElementById('sizeRange');
+const clearBtn = document.getElementById('clearBtn');
+const saveBtn = document.getElementById('saveBtn');
+const pixiView = document.getElementById('pixi-view');
 
-        // Создание цветовых плиток
-        const colorGrid = document.getElementById("colorGrid");
-        let currentColor = colors[0];
+/* populate palette */
+function buildPalette(id){
+  const pal = PALETTES[id];
+  paletteName.textContent = pal.name;
+  paletteGrid.innerHTML = '';
+  pal.colors.forEach((c,i)=>{
+    const d = document.createElement('div');
+    d.className = 'sw';
+    d.style.background = c;
+    d.dataset.color = c;
+    d.title = c;
+    d.addEventListener('click', ()=> {
+      currentColor = c;
+      currentTool = 'brush';
+      updateUI();
+      // highlight
+      paletteGrid.querySelectorAll('.sw').forEach(x=> x.style.outline='0');
+      d.style.outline = '2px solid rgba(125,211,252,0.12)';
+    });
+    paletteGrid.appendChild(d);
+    if(i===0){ d.style.outline='2px solid rgba(125,211,252,0.12)'; }
+  });
+}
+buildPalette(paletteId);
 
-        colors.forEach(color => {
-            const div = document.createElement("div");
-            div.className = "color-tile";
-            div.style.backgroundColor = color;
-            div.onclick = () => selectColor(div, color);
-            colorGrid.appendChild(div);
-        });
+/* PIXI app */
+const app = new PIXI.Application({
+  backgroundAlpha: 0,
+  antialias: true,
+  autoDensity: true,
+  resolution: Math.max(1, window.devicePixelRatio || 1),
+  resizeTo: pixiView
+});
+pixiView.appendChild(app.view);
 
-        function selectColor(tile, color) {
-            currentColor = color;
-            document.querySelectorAll(".color-tile").forEach(t => t.classList.remove("active-color"));
-            tile.classList.add("active-color");
-        }
+/* drawing layer using Graphics */
+const g = new PIXI.Graphics();
+app.stage.addChild(g);
 
-        // Выделяем первый цвет
-        document.querySelector(".color-tile").classList.add("active-color");
+/* state */
+let drawing = false;
+let last = null;
+let currentColor = PALETTES[paletteId].colors[0];
+let currentSize = parseInt(sizeRange.value,10) || 18;
+let currentTool = 'brush'; // 'brush' or 'eraser'
 
-        // PIXIJS — создаём приложение и холст
-        const app = new PIXI.Application({
-            view: document.getElementById("pixi-canvas"),
-            resizeTo: document.querySelector(".canvas-container"),
-            backgroundColor: 0x0A2342,
-            antialias: true
-        });
+function updateUI(){
+  statusEl.textContent = `${currentTool === 'eraser' ? 'Eraser' : 'Brush'} • Size ${currentSize}`;
+  brushBtn.style.background = currentTool === 'brush' ? 'rgba(255,255,255,0.03)' : 'transparent';
+  eraserBtn.style.background = currentTool === 'eraser' ? 'rgba(255,255,255,0.03)' : 'transparent';
+}
+updateUI();
 
-        const drawingLayer = new PIXI.Graphics();
-        app.stage.addChild(drawingLayer);
+/* helpers: convert pointer event global to local stage coords */
+function getPosFromEvent(e){
+  // e.data.global exists for PIXI InteractionEvent, but when using view pointer listeners use clientX/Y
+  const rect = app.view.getBoundingClientRect();
+  const x = (e.clientX - rect.left) * (app.renderer.width / rect.width);
+  const y = (e.clientY - rect.top) * (app.renderer.height / rect.height);
+  // convert back to CSS coords for drawing with graphics (graphics uses resolution-scaled coords)
+  const cssX = (x / app.renderer.resolution);
+  const cssY = (y / app.renderer.resolution);
+  return {x: cssX, y: cssY};
+}
 
-        let drawing = false;
-        let brushSize = 20;
-        let eraserMode = false;
+/* drawing functions (simple, reliable) */
+function drawLine(from, to, color, size, erase=false){
+  if(erase){
+    // simple eraser: draw with transparent blend by clearing a circle area from a RenderTexture would be ideal.
+    // For stability now: draw background-colored circle to mimic erasing (works because background is uniform gradient)
+    // This is a pragmatic temporary eraser (we'll upgrade later).
+    g.beginFill(0x0A2342); // approximate background color - temporary solution
+    g.drawCircle(to.x, to.y, size);
+    g.endFill();
+    return;
+  }
+  g.lineStyle(size, PIXI.utils.string2hex(color), 1, 0.5, true);
+  g.moveTo(from.x, from.y);
+  g.lineTo(to.x, to.y);
+  g.endFill();
+}
 
-        const brushSizeSlider = document.getElementById("brushSize");
-        brushSizeSlider.oninput = () => {
-            brushSize = parseInt(brushSizeSlider.value);
-        };
+/* pointer handling on the canvas view */
+app.view.addEventListener('pointerdown', (ev)=>{
+  drawing = true;
+  last = getPosFromEvent(ev);
+  // draw initial dot
+  if(currentTool === 'eraser'){
+    drawLine(last, last, null, currentSize, true);
+  } else {
+    drawLine(last, last, currentColor, currentSize, false);
+  }
+});
+window.addEventListener('pointermove', (ev)=>{
+  if(!drawing) return;
+  const pos = getPosFromEvent(ev);
+  drawLine(last, pos, currentColor, currentSize, currentTool==='eraser');
+  last = pos;
+});
+window.addEventListener('pointerup', ()=>{ drawing = false; last = null; });
+window.addEventListener('pointercancel', ()=>{ drawing = false; last = null; });
 
-        document.getElementById("brushBtn").onclick = () => {
-            eraserMode = false;
-        };
-        document.getElementById("eraserBtn").onclick = () => {
-            eraserMode = true;
-        };
+/* UI events */
+brushBtn.addEventListener('click', ()=>{ currentTool='brush'; updateUI(); });
+eraserBtn.addEventListener('click', ()=>{ currentTool='eraser'; updateUI(); });
+sizeRange.addEventListener('input', ()=>{ currentSize = parseInt(sizeRange.value,10); updateUI(); });
 
-        app.view.addEventListener("pointerdown", (e) => {
-            drawing = true;
-            draw(e);
-        });
+clearBtn.addEventListener('click', ()=>{
+  g.clear();
+});
 
-        app.view.addEventListener("pointerup", () => drawing = false);
-        app.view.addEventListener("pointerupoutside", () => drawing = false);
-        app.view.addEventListener("pointermove", draw);
+saveBtn.addEventListener('click', ()=>{
+  // use renderer.extract to get a canvas image
+  const canvas = app.renderer.extract.canvas(app.stage);
+  canvas.toBlob((blob)=>{
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'ambient-draw.png';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }, 'image/png');
+});
 
-        function draw(e) {
-            if (!drawing) return;
+/* initial UI highlight */
+updateUI();
 
-            const pos = e.data ? e.data.global : app.renderer.plugins.interaction.mouse.global;
-
-            if (eraserMode) {
-                drawingLayer.beginFill(0x0A2342);
-            } else {
-                drawingLayer.beginFill(PIXI.utils.string2hex(currentColor));
-            }
-            drawingLayer.drawCircle(pos.x, pos.y, brushSize);
-            drawingLayer.endFill();
-        }
-    </script>
-
+</script>
 </body>
 </html>
